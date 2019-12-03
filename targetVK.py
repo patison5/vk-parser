@@ -1,4 +1,6 @@
 import vk
+import json
+
 
 def get_members(groupid):  # Функция формирования базы участников сообщества в виде списка
     first = vk_api.groups.getMembers(group_id=groupid, v=5.92)  # Первое выполнение метода
@@ -30,15 +32,43 @@ def enter_data(filename="data.txt"):  # Функция ввода базы из 
 
 
 # Функция нахождения пересечений двух баз
-def get_intersection(group1, group2):
+def get_intersection(group1, group2, group_name):
     group1 = set(group1)
     group2 = set(group2)
     intersection = group1.intersection(group2)  # Находим пересечение двух множеств
     all_members = len(group1) + len(group2) - len(intersection)
     result = len(intersection) / all_members * 100  # Высчитываем пересечение в процентах
-    #print("Пересечение аудиторий: ", round(result, 2), "%", sep="")
-    print("Схожесть данных с предложенной группой: ", round(100 * len(intersection) / len(group2), 2), "%", sep="")
+    # print("Пересечение аудиторий: ", round(result, 2), "%", sep="")
+    print(f"Схожесть данных с предложенной группой: [ {group_name} ]: ", round(100 * len(intersection) / len(group2), 2), "%", sep="")
     return list(intersection)
+
+
+def remove_unactive_users (group):
+    result_group = []
+    incrementor = 0
+
+    for profile in group:
+        id = profile
+        id2 = 170877706
+
+        profiles = vk_api.users.get(user_id=id,
+                                    fields="last_seen, verified", v=5.92)
+
+        _isDeactivated = False
+        for k, v in profiles[0].items():
+            if k == 'deactivated':
+                _isDeactivated = True
+                # print(k, ' ', v)
+
+        if not _isDeactivated:
+            result_group.append(profile)
+            # print(profiles[0]['first_name'])
+
+        incrementor += 1
+        if (incrementor % 1000) == 0:
+            print(f"Выполнено: ", round(100 * incrementor / len(group), 2), "%", sep="")
+
+    return list(result_group)
 
 
 # Функция объединения двух баз без повторов
@@ -52,19 +82,28 @@ def union_members(group1, group2):
 def remove_members(group1, group2):
     group2 = set(group2)
     group1 = set(group1)
-    for item in group2:
-        # group1 = group1.discard(item)
-        group1.remove(group2, item)
+    result_group = []
 
+    for item1 in group1:
+        flag = True
 
-    return list(group2)
+        for item2 in group2:
+            if item1 == item2:
+                flag = False
+                break
+
+        if flag:
+            result_group.append(item1)
+
+    return list(result_group)
+
 
 if __name__ == "__main__":
     token = "0152bbbc0152bbbc0152bbbc04013f4323001520152bbbc5c995c1692c36bf31fb38a5d"
     session = vk.Session(access_token=token)
     vk_api = vk.API(session)
 
-    goups_list = ["rust_iron",              "madfun",           "rustultimate",]
+    goups_list = ["redfederust",        "rust_iron",              "madfun",           "rustultimate",]
                   # "grandrust_server",       "rustfury",         "magicowrust",
                   # "chistobzden",            "travelerust",      "bloodrust",
                   # "dimonrust",              "rust_planet",      "dante_rust",
@@ -74,14 +113,12 @@ if __name__ == "__main__":
 
     result = get_members(goups_list[0])
 
-
-    #Собираем большой список
     i = 1;
     while i < len(goups_list):
         gr = get_members(goups_list[i])         # берем участнико группы
 
-        #print(f"[{goups_list[0:i:1]}] ({len(result)}) -> {goups_list[i]} ({len(gr)})")
-        get_intersection(result, gr)            # получаем статистика его списка и ноой группы
+        # print(f"[{goups_list[0:i:1]}] ({len(result)}) -> {goups_list[i]} ({len(gr)})")
+        get_intersection(result, gr, goups_list[i])            # получаем статистика его списка и ноой группы
 
         result = union_members(gr, result)      # Соединяем с сущестющим списком
 
@@ -89,16 +126,23 @@ if __name__ == "__main__":
 
     print(f"Всего: {len(result)} пользотелей")
 
-    # Удаляем пользотелей из ггруп для ремуа
-    i = 0;
-    while i < len(group_list_to_remove):
-        gr = get_members(group_list_to_remove[i])  # берем участнико группы
+    all_users_length = len(result)
 
-        print(f"[result] ({len(result)}) -> {group_list_to_remove[i]} ({len(gr)})")
-        remove_members(result, gr)  # получаем статистика его списка и ноой группы
+    # Удаляем пользотелей из груп для ремуа
+    i = 0;
+
+    while i < len(group_list_to_remove):
+        gr = get_members(group_list_to_remove[i])  # берем участников группы
+
+        result = remove_members(result, gr)  # получаем статистика его списка и ноой группы
 
         i += 1
 
-
+    print(f"Удалено: {all_users_length - len(result)} пользователей")
     print(f"Всего: {len(result)} уникальных пользотелей")
+
+    result = remove_unactive_users(result)
+    print(f"После удаления неактивных: {len(result)}")
+
+
     save_data(result)
