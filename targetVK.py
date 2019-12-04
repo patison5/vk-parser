@@ -52,12 +52,12 @@ def remove_unactive_users (group):
         id2 = 170877706
 
         profiles = vk_api.users.get(user_id=id,
-                                    fields="last_seen, verified", v=5.92)
+                                    fields="last_seen, verified, sex", v=5.92)
 
         _isDeactivated = False
         for k, v in profiles[0].items():
-            print(k, ' ', v)
-            if k == 'deactivated':
+            #print(k, ' ', v)
+            if k == 'deactivated' or (k == 'sex' and v == 2):
                 _isDeactivated = True
                 #print(k, ' ', v)
 
@@ -104,11 +104,12 @@ if __name__ == "__main__":
     session = vk.Session(access_token=token)
     vk_api = vk.API(session)
 
-    goups_list = ["redfederust",        "rust_iron",              "madfun",           "rustultimate",]
-                  # "grandrust_server",       "rustfury",         "magicowrust",
-                  # "chistobzden",            "travelerust",      "bloodrust",
-                  # "dimonrust",              "rust_planet",      "dante_rust",
-                  # "rustchance",             "magicrustfree",    "qqrust"]
+    goups_list = ["redfederust",        "rust_iron",
+                  "madfun",           "rustultimate",
+                   "grandrust_server",       "rustfury",         "magicowrust",
+                   "chistobzden",            "travelerust",      "bloodrust",
+                   "dimonrust",              "rust_planet",      "dante_rust",
+                   "rustchance",             "magicrustfree",    "qqrust"]
 
     group_list_to_remove = ["redfederust"]
 
