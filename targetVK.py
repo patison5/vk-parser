@@ -56,9 +56,10 @@ def remove_unactive_users (group):
 
         _isDeactivated = False
         for k, v in profiles[0].items():
+            print(k, ' ', v)
             if k == 'deactivated':
                 _isDeactivated = True
-                # print(k, ' ', v)
+                #print(k, ' ', v)
 
         if not _isDeactivated:
             result_group.append(profile)
